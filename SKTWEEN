@@ -1,0 +1,325 @@
+-- SK TWEEN com TELEPORTE PAREDE 14 CHUNKS - Delta Executor
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local savedPosition = nil
+local minimized = false
+local wallRayDistance = 14 -- 14 CHUNKS EXATOS
+
+-- GUI (igual)
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SKTWEEN_Animated"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ResetOnSpawn = false
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 280, 0, 210)
+mainFrame.Position = UDim2.new(0.5, -140, 1.5, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(35, 10, 60)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 16)
+corner.Parent = mainFrame
+
+-- Header, minimize, close (igual)
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 40)
+header.Position = UDim2.new(0, 0, 0, 0)
+header.BackgroundColor3 = Color3.fromRGB(50, 15, 85)
+header.BorderSizePixel = 0
+header.Parent = mainFrame
+local headerCorner = Instance.new("UICorner")
+headerCorner.CornerRadius = UDim.new(0, 16)
+headerCorner.Parent = header
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -80, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "SK TWEEN"
+title.TextColor3 = Color3.fromRGB(200, 170, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = header
+
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -70, 0, 5)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(80, 30, 120)
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.new(1,1,1)
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 20
+minimizeBtn.Parent = header
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 8)
+minCorner.Parent = minimizeBtn
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(120, 20, 80)
+closeBtn.Text = "×"
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 20
+closeBtn.Parent = header
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeBtn
+
+-- Content
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, -20, 1, -50)
+contentFrame.Position = UDim2.new(0, 10, 0, 40)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
+
+local saveBtn = Instance.new("TextButton")
+saveBtn.Size = UDim2.new(0.9, 0, 0, 45)
+saveBtn.Position = UDim2.new(0.05, 0, 0, 10)
+saveBtn.BackgroundColor3 = Color3.fromRGB(70, 30, 130)
+saveBtn.Text = "📍 Salvar Posição"
+saveBtn.TextColor3 = Color3.new(1,1,1)
+saveBtn.Font = Enum.Font.GothamBold
+saveBtn.TextSize = 18
+saveBtn.Parent = contentFrame
+local saveCorner = Instance.new("UICorner")
+saveCorner.CornerRadius = UDim.new(0, 10)
+saveCorner.Parent = saveBtn
+
+local tpBtn = Instance.new("TextButton")
+tpBtn.Size = UDim2.new(0.9, 0, 0, 45)
+tpBtn.Position = UDim2.new(0.05, 0, 0, 65)
+tpBtn.BackgroundColor3 = Color3.fromRGB(90, 40, 150)
+tpBtn.Text = "🚀 Teleportar"
+tpBtn.TextColor3 = Color3.new(1,1,1)
+tpBtn.Font = Enum.Font.GothamBold
+tpBtn.TextSize = 18
+tpBtn.Parent = contentFrame
+local tpCorner = Instance.new("UICorner")
+tpCorner.CornerRadius = UDim.new(0, 10)
+tpCorner.Parent = tpBtn
+
+-- BOTÃO TP PAREDE (NOME MUDADO)
+local wallTPBtn = Instance.new("TextButton")
+wallTPBtn.Size = UDim2.new(0.9, 0, 0, 45)
+wallTPBtn.Position = UDim2.new(0.05, 0, 0, 120)
+wallTPBtn.BackgroundColor3 = Color3.fromRGB(110, 20, 160)
+wallTPBtn.Text = "🧱 TP parede"  -- ✅ NOME MUDADO
+wallTPBtn.TextColor3 = Color3.new(1,1,1)
+wallTPBtn.Font = Enum.Font.GothamBold
+wallTPBtn.TextSize = 18
+wallTPBtn.Parent = contentFrame
+local wallTPCorner = Instance.new("UICorner")
+wallTPCorner.CornerRadius = UDim.new(0, 10)
+wallTPCorner.Parent = wallTPBtn
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(0.9, 0, 0, 25)
+statusLabel.Position = UDim2.new(0.05, 0, 1, -30)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "🔥 Carregando..."
+statusLabel.TextColor3 = Color3.fromRGB(180, 160, 255)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 15
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = contentFrame
+
+-- * TELEPORTE PAREDE 14 CHUNKS *
+local function tpParede14Chunks()
+    if not humanoidRootPart then return end
+    
+    local currentY = humanoidRootPart.Position.Y
+    local rayOrigin = humanoidRootPart.Position
+    local rayDirection = humanoidRootPart.CFrame.LookVector * wallRayDistance
+    
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    raycastParams.FilterDescendantsInstances = {character}
+    
+    local raycastResult = Workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+    
+    if raycastResult then
+        local hitPosition = raycastResult.Position
+        local tpPosition = hitPosition + (rayDirection.Unit * 3)
+        tpPosition = Vector3.new(tpPosition.X, currentY, tpPosition.Z)
+        
+        humanoidRootPart.CFrame = CFrame.new(tpPosition, tpPosition + humanoidRootPart.CFrame.LookVector)
+        statusLabel.Text = "🧱 TP parede!"
+        statusLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+        
+    else
+        local tpPosition = rayOrigin + (rayDirection.Unit * wallRayDistance)
+        tpPosition = Vector3.new(tpPosition.X, currentY, tpPosition.Z)
+        
+        humanoidRootPart.CFrame = CFrame.new(tpPosition, tpPosition + humanoidRootPart.CFrame.LookVector)
+        statusLabel.Text = "🚀 TP 14 chunks!"
+        statusLabel.TextColor3 = Color3.fromRGB(100, 255, 255)
+    end
+    
+    local originalSize = wallTPBtn.Size
+    TweenService:Create(wallTPBtn, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
+        Size = UDim2.new(0.95, 0, 0, 52),
+        Position = UDim2.new(0.025, 0, 0, 114)
+    }):Play()
+    task.wait(0.2)
+    TweenService:Create(wallTPBtn, TweenInfo.new(0.15, Enum.EasingStyle.Back), {
+        Size = originalSize,
+        Position = UDim2.new(0.05, 0, 0, 120)
+    }):Play()
+end
+
+-- Resto do código (intro, drag, save, tp, minimize, close) permanece IDÊNTICO
+local function introAnimation()
+    statusLabel.Text = "🎉 SK TWEEN carregado!"
+    TweenService:Create(mainFrame, TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.5, -140, 0.4, -105)
+    }):Play()
+    TweenService:Create(header, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, 0, true), {
+        Size = UDim2.new(1, 0, 0, 45)
+    }):Play()
+end
+
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+local function updateInput(input)
+    local Delta = input.Position - dragStart
+    TweenService:Create(mainFrame, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+        Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + Delta.X, startPos.Y.Scale, startPos.Y.Offset + Delta.Y)
+    }):Play()
+end
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        TweenService:Create(mainFrame, TweenInfo.new(0.2), {
+            Size = UDim2.new(0, 285, 0, 215)
+        }):Play()
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+                TweenService:Create(mainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
+                    Size = UDim2.new(0, 280, 0, 210)
+                }):Play()
+            end
+        end)
+    end
+end)
+
+header.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        updateInput(input)
+    end
+end)
+
+local function updateCharacter()
+    character = player.Character or player.CharacterAdded:Wait()
+    humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+end
+
+updateCharacter()
+player.CharacterAdded:Connect(updateCharacter)
+
+saveBtn.MouseButton1Click:Connect(function()
+    if humanoidRootPart then
+        savedPosition = humanoidRootPart.CFrame
+        statusLabel.Text = "✅ Posição salva!"
+        statusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+        local originalSize = saveBtn.Size
+        TweenService:Create(saveBtn, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
+            Size = UDim2.new(0.95, 0, 0, 52),
+            Position = UDim2.new(0.025, 0, 0, 4)
+        }):Play()
+        task.wait(0.2)
+        TweenService:Create(saveBtn, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
+            Size = originalSize,
+            Position = UDim2.new(0.05, 0, 0, 10)
+        }):Play()
+    else
+        statusLabel.Text = "❌ Sem personagem"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end
+end)
+
+tpBtn.MouseButton1Click:Connect(function()
+    if savedPosition and humanoidRootPart then
+        humanoidRootPart.CFrame = savedPosition
+        statusLabel.Text = "🚀 Teleportado!"
+        statusLabel.TextColor3 = Color3.fromRGB(100, 255, 255)
+        local originalSize = tpBtn.Size
+        TweenService:Create(tpBtn, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
+            Size = UDim2.new(0.95, 0, 0, 52),
+            Position = UDim2.new(0.025, 0, 0, 59)
+        }):Play()
+        task.wait(0.2)
+        TweenService:Create(tpBtn, TweenInfo.new(0.2, Enum.EasingStyle.Back), {
+            Size = originalSize,
+            Position = UDim2.new(0.05, 0, 0, 65)
+        }):Play()
+    else
+        statusLabel.Text = "❌ Sem posição salva"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end
+end)
+
+wallTPBtn.MouseButton1Click:Connect(tpParede14Chunks)
+
+minimizeBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        TweenService:Create(contentFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(1, -20, 0, 0)
+        }):Play()
+        task.wait(0.3)
+        contentFrame.Visible = false
+        TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+            Size = UDim2.new(0, 280, 0, 40)
+        }):Play()
+        minimizeBtn.Text = "+"
+    else
+        contentFrame.Visible = true
+        TweenService:Create(mainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back), {
+            Size = UDim2.new(0, 280, 0, 210)
+        }):Play()
+        task.wait(0.3)
+        TweenService:Create(contentFrame, TweenInfo.new(0.3), {
+            Size = UDim2.new(1, -20, 1, -50)
+        }):Play()
+        minimizeBtn.Text = "-"
+    end
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    }):Play()
+    task.wait(0.4)
+    screenGui:Destroy()
+end)
+
+task.wait(0.1)
+introAnimation()
+statusLabel.Text = "🧱 TP parede pronto! ✨"
