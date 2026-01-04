@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SK REGEDITS</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:monospace}
+body{
+  background:#000;
+  color:#fff;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+
+/* CANVAS FUNDO */
+canvas{
+  position:fixed;
+  inset:0;
+  z-index:0;
+}
+
+/* LOGIN */
+.login,.card{
+  position:relative;
+  z-index:2;
+  background:rgba(10,10,10,.9);
+  border-radius:16px;
+  padding:22px;
+  width:320px;
+}
+
+.login h2,.title{
+  text-align:center;
+  margin-bottom:18px;
+}
+
+.login input{
+  width:100%;
+  height:42px;
+  border-radius:10px;
+  border:none;
+  background:#111;
+  color:#1e90ff;
+  padding:0 12px;
+  margin-bottom:12px;
+}
+
+.login button,.inject{
+  width:100%;
+  height:42px;
+  border-radius:10px;
+  border:none;
+  background:#1e90ff;
+  color:#000;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.card{display:none;width:340px}
+
+.options{
+  display:grid;
+  gap:10px;
+  margin-bottom:14px;
+}
+
+.option{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.option input{
+  appearance:none;
+  width:18px;
+  height:18px;
+  border-radius:4px;
+  border:2px solid #555;
+}
+
+.option input:checked{
+  background:#1e90ff;
+  border-color:#1e90ff;
+}
+
+.slider-box input{width:100%;accent-color:#1e90ff}
+
+.codes{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.95);
+  color:#1e90ff;
+  font-size:11px;
+  padding:12px;
+  display:none;
+}
+
+.codes.active{display:block}
+</style>
+</head>
+
+<body>
+
+<canvas id="snow"></canvas>
+
+<!-- LOGIN -->
+<div class="login" id="login">
+  <h2>SK REGEDITS</h2>
+  <input type="password" id="password" placeholder="Senha">
+  <button id="enter">ENTRAR</button>
+</div>
+
+<!-- PAINEL -->
+<div class="card" id="panel">
+  <div class="title">SK REGEDITS</div>
+
+  <div class="options">
+    <label class="option"><input type="checkbox"> Aim Assist</label>
+    <label class="option"><input type="checkbox"> No Recoil</label>
+    <label class="option"><input type="checkbox"> Aim Lock</label>
+    <label class="option"><input type="checkbox"> Precisão+</label>
+    <label class="option"><input type="checkbox"> Estabilizar Mira</label>
+    <label class="option"><input type="checkbox"> Sync Touch</label>
+    <label class="option"><input type="checkbox"> Auxílio Inteligente</label>
+  </div>
+
+  <div class="slider-box">
+    <input type="range" min="60" max="130" value="90">
+  </div>
+
+  <button class="inject" id="inject">INJETAR</button>
+  <div class="codes" id="codes"></div>
+</div>
+
+<script>
+/* ===== SENHA ===== */
+function hash(t){let h=0;for(let i=0;i<t.length;i++){h=(h<<5)-h+t.charCodeAt(i);h|=0}return h}
+const passwordHash = hash("SKTWEENFF");
+
+enter.onclick=()=>{
+  if(hash(password.value)===passwordHash){
+    login.style.display="none";
+    panel.style.display="block";
+  }
+};
+
+/* ===== INJETAR (visual) ===== */
+const fake=[
+  "inject::start()","load module","patch values",
+  "sync input","alloc memory","write offsets","done"
+];
+
+inject.onclick=()=>{
+  codes.innerHTML="";
+  codes.classList.add("active");
+  fake.forEach((c,i)=>{
+    setTimeout(()=>{
+      const d=document.createElement("div");
+      d.textContent=c;
+      codes.appendChild(d);
+    },i*180);
+  });
+  setTimeout(()=>codes.classList.remove("active"),3000);
+};
+
+/* ===== NEVE INTERATIVA ===== */
+const canvas=document.getElementById("snow");
+const ctx=canvas.getContext("2d");
+let w,h,flakes=[],mouse={x:0,y:0,down:false};
+
+function resize(){
+  w=canvas.width=window.innerWidth;
+  h=canvas.height=window.innerHeight;
+}
+window.onresize=resize; resize();
+
+for(let i=0;i<120;i++){
+  flakes.push({
+    x:Math.random()*w,
+    y:Math.random()*h,
+    r:Math.random()*3+1,
+    vx:(Math.random()-.5)*0.6,
+    vy:Math.random()*1+.5
+  });
+}
+
+canvas.onmousemove=e=>{mouse.x=e.clientX;mouse.y=e.clientY};
+canvas.onmousedown=()=>mouse.down=true;
+canvas.onmouseup=()=>mouse.down=false;
+canvas.ontouchmove=e=>{
+  mouse.x=e.touches[0].clientX;
+  mouse.y=e.touches[0].clientY;
+};
+
+function draw(){
+  ctx.clearRect(0,0,w,h);
+  flakes.forEach(f=>{
+    const dx=f.x-mouse.x, dy=f.y-mouse.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+
+    if(dist<80){
+      f.vx+=dx/100;
+      f.vy+=dy/100;
+      if(mouse.down){ f.vx+=dx/20; f.vy+=dy/20; }
+    }
+
+    f.x+=f.vx; f.y+=f.vy;
+    if(f.y>h) f.y=0;
+    if(f.x>w) f.x=0;
+    if(f.x<0) f.x=w;
+
+    ctx.beginPath();
+    ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+    ctx.fillStyle="rgba(180,220,255,.8)";
+    ctx.fill();
+  });
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+
+</body>
+</html>
